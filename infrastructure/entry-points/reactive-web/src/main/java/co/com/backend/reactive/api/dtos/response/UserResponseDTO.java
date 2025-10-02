@@ -1,4 +1,5 @@
-package co.com.backend.reactive.model.user;
+package co.com.backend.reactive.api.dtos.response;
+
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class User {
+public class UserResponseDTO {
     private Long id;
     private String name;
     private String email;
