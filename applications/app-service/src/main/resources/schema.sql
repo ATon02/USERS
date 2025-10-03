@@ -3,3 +3,9 @@ CREATE TABLE IF NOT EXISTS user_entity (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE
 );
+
+CREATE TABLE IF NOT EXISTS user_bootcamp (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    bootcamp_id BIGINT NOT NULL
+);
