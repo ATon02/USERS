@@ -15,7 +15,8 @@ public enum UserError {
     BOOTCAMP_LIST_EMPTY("Bootcamp list cannot be empty"),
     BOOTCAMP_LIST_TOO_LARGE("Cannot register more than 5 bootcamps at once"),
     USER_ALREADY_HAS_BOOTCAMPS("User already has some of these bootcamps registered"),
-    BOOTCAMP_NOT_FOUND("Bootcamp not found");
+    BOOTCAMP_NOT_FOUND("Bootcamp not found"),
+    USER_ID_INVALID("User id is invalid format");
     
    
     

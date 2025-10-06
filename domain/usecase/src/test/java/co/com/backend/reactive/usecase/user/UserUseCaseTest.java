@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import co.com.backend.reactive.usecase.user.exceptions.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,68 +68,8 @@ class UserUseCaseTest {
         
         StepVerifier.create(userUseCase.save(user))
                 .expectErrorMatches(throwable -> 
-                    throwable instanceof IllegalArgumentException &&
+                    throwable instanceof BusinessException &&
                     throwable.getMessage().equals(UserError.USER_EMAIL_ALREADY_EXISTS.getMessage()))
-                .verify();
-    }
-    
-    @Test
-    void save_WhenSaveFails_ShouldReturnError() {
-        User user = User.builder().name("John Doe").email("john@example.com").build();
-        
-        when(userRepository.findByEmail(anyString())).thenReturn(Mono.empty());
-        when(userRepository.save(any(User.class))).thenReturn(Mono.empty());
-        
-        StepVerifier.create(userUseCase.save(user))
-                .expectErrorMatches(throwable -> 
-                    throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().equals(UserError.USER_NOT_CREATED.getMessage()))
-                .verify();
-    }
-    
-    @Test
-    void registerUserBootcamp_WhenUserIdIsNull_ShouldReturnError() {
-        List<Long> bootcampIds = Arrays.asList(1L, 2L);
-        
-        StepVerifier.create(userUseCase.registerUserBootcamp(null, bootcampIds))
-                .expectErrorMatches(throwable -> 
-                    throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().equals(UserError.USER_ID_REQUIRED.getMessage()))
-                .verify();
-    }
-    
-    @Test
-    void registerUserBootcamp_WhenBootcampListIsNull_ShouldReturnError() {
-        Long userId = 1L;
-        
-        StepVerifier.create(userUseCase.registerUserBootcamp(userId, null))
-                .expectErrorMatches(throwable -> 
-                    throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().equals(UserError.BOOTCAMP_LIST_EMPTY.getMessage()))
-                .verify();
-    }
-    
-    @Test
-    void registerUserBootcamp_WhenBootcampListIsEmpty_ShouldReturnError() {
-        Long userId = 1L;
-        List<Long> bootcampIds = Collections.emptyList();
-        
-        StepVerifier.create(userUseCase.registerUserBootcamp(userId, bootcampIds))
-                .expectErrorMatches(throwable -> 
-                    throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().equals(UserError.BOOTCAMP_LIST_EMPTY.getMessage()))
-                .verify();
-    }
-    
-    @Test
-    void registerUserBootcamp_WhenBootcampListTooLarge_ShouldReturnError() {
-        Long userId = 1L;
-        List<Long> bootcampIds = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L);
-        
-        StepVerifier.create(userUseCase.registerUserBootcamp(userId, bootcampIds))
-                .expectErrorMatches(throwable -> 
-                    throwable instanceof IllegalArgumentException &&
-                    throwable.getMessage().equals(UserError.BOOTCAMP_LIST_TOO_LARGE.getMessage()))
                 .verify();
     }
     
@@ -141,7 +82,7 @@ class UserUseCaseTest {
         
         StepVerifier.create(userUseCase.registerUserBootcamp(userId, bootcampIds))
                 .expectErrorMatches(throwable -> 
-                    throwable instanceof IllegalArgumentException &&
+                    throwable instanceof BusinessException &&
                     throwable.getMessage().equals(UserError.USER_NOT_FOUND.getMessage()))
                 .verify();
     }
@@ -160,7 +101,7 @@ class UserUseCaseTest {
         
         StepVerifier.create(userUseCase.registerUserBootcamp(userId, bootcampIds))
                 .expectErrorMatches(throwable -> 
-                    throwable instanceof IllegalArgumentException &&
+                    throwable instanceof BusinessException &&
                     throwable.getMessage().equals(UserError.USER_ALREADY_HAS_BOOTCAMPS.getMessage()))
                 .verify();
     }

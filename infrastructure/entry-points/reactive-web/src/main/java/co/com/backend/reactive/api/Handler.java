@@ -3,11 +3,16 @@ package co.com.backend.reactive.api;
 import co.com.backend.reactive.api.dtos.request.RegisterBootcampRequest;
 import co.com.backend.reactive.api.dtos.request.UserRequestDTO;
 import co.com.backend.reactive.api.dtos.response.BaseResponse;
+import co.com.backend.reactive.api.helper.ConstHandler;
+import co.com.backend.reactive.api.helper.ValidatorRequest;
 import co.com.backend.reactive.api.mapper.UserDTOMapper;
 import co.com.backend.reactive.usecase.user.IUserUseCase;
+import co.com.backend.reactive.usecase.user.enums.UserError;
+import co.com.backend.reactive.usecase.user.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -21,9 +26,11 @@ public class Handler {
     
     private final IUserUseCase userUseCase;
     private final UserDTOMapper userDTOMapper;
+    private final ValidatorRequest validatorRequest;
 
     public Mono<ServerResponse> saveUser(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(UserRequestDTO.class)
+                .doOnNext(validatorRequest::validateDTOUser)
                 .map(userDTOMapper::toModel)
                 .flatMap(userUseCase::save)
                 .map(userDTOMapper::toResponseDTO)
@@ -40,19 +47,16 @@ public class Handler {
     }
 
     public Mono<ServerResponse> registerUserBootcamp(ServerRequest request) {
-        return Mono.just(request.pathVariable("userId"))
-                .flatMap(userIdStr -> {
-                    try {
-                        return Mono.just(Long.parseLong(userIdStr));
-                    } catch (NumberFormatException e) {
-                        return Mono.error(new IllegalArgumentException("Invalid user ID format"));
-                    }
-                })
+        String userId = request.pathVariable(ConstHandler.Id_PARAM.getParameterName());
+        return Mono.fromCallable(() -> Long.parseLong(userId))
+                .onErrorMap(NumberFormatException.class,
+                        ex -> new BusinessException(UserError.USER_ID_INVALID.getMessage()))
                 .zipWith(request.bodyToMono(RegisterBootcampRequest.class))
+                .doOnNext(tuple -> validatorRequest.validateDTORegisterBootcamp(tuple.getT2()))
                 .flatMap(tuple -> {
-                    Long userId = tuple.getT1();
+                    Long id = tuple.getT1();
                     RegisterBootcampRequest bootcampRequest = tuple.getT2();
-                    return userUseCase.registerUserBootcamp(userId, bootcampRequest.getBootcampIds());
+                    return userUseCase.registerUserBootcamp(id, bootcampRequest.getBootcampIds());
                 })
                 .then(Mono.defer(() -> {
                     BaseResponse<Void> response = BaseResponse.<Void>builder()
@@ -61,7 +65,10 @@ public class Handler {
                             .path(request.path())
                             .timestamp(LocalDateTime.now())
                             .build();
-                    return ServerResponse.ok().bodyValue(response);
-                }));
+                    return ServerResponse.ok()
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(response);
+                }))
+                ;
     }
 }

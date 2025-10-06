@@ -7,7 +7,7 @@ import co.com.backend.reactive.model.user.User;
 import co.com.backend.reactive.model.user.gateways.UserRepository;
 import co.com.backend.reactive.model.userboocamp.UserBootcamp;
 import co.com.backend.reactive.model.userboocamp.gateways.UserBootcampRepository;
-import co.com.backend.reactive.usecase.user.utils.UserValidator;
+import co.com.backend.reactive.usecase.user.exceptions.BusinessException;
 import co.com.backend.reactive.usecase.user.enums.UserError;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -22,53 +22,38 @@ public class UserUseCase implements IUserUseCase {
     
     @Override
     public Mono<User> save(User user) {
-        return UserValidator.validateForSave(user)
-            .flatMap(validUser -> 
-                userRepository.findByEmail(validUser.getEmail())
+        return userRepository.findByEmail(user.getEmail())
                     .flatMap(exist -> Mono.<User>error(
-                        new IllegalArgumentException(UserError.USER_EMAIL_ALREADY_EXISTS.getMessage()))
+                        new BusinessException(UserError.USER_EMAIL_ALREADY_EXISTS.getMessage()))
                     )
                     .switchIfEmpty(
                         Mono.defer(() -> 
-                            userRepository.save(validUser)
-                                .switchIfEmpty(Mono.error(new IllegalArgumentException(UserError.USER_NOT_CREATED.getMessage())))
+                            userRepository.save(user)
+                                .switchIfEmpty(Mono.error(new BusinessException(UserError.USER_NOT_CREATED.getMessage())))
                         )
-                    )
-            );
+                    );
     }
 
     @Override
     public Mono<Void> registerUserBootcamp(Long userId, List<Long> bootcampIds) {
-        if (userId == null) {
-            return Mono.error(new IllegalArgumentException(UserError.USER_ID_REQUIRED.getMessage()));
-        }
-        
-        if (bootcampIds == null || bootcampIds.isEmpty()) {
-            return Mono.error(new IllegalArgumentException(UserError.BOOTCAMP_LIST_EMPTY.getMessage()));
-        }
-        
-        if (bootcampIds.size() > 5) {
-            return Mono.error(new IllegalArgumentException(UserError.BOOTCAMP_LIST_TOO_LARGE.getMessage()));
-        }
-        
         return userRepository.findById(userId)
-            .switchIfEmpty(Mono.error(new IllegalArgumentException(UserError.USER_NOT_FOUND.getMessage())))
+            .switchIfEmpty(Mono.error(new BusinessException(UserError.USER_NOT_FOUND.getMessage())))
             .flatMap(user -> 
                 Flux.fromIterable(bootcampIds)
                     .flatMap(bootcampId -> 
                         bootcampDataRepository.findById(bootcampId)
-                            .switchIfEmpty(Mono.error(new IllegalArgumentException(
+                            .switchIfEmpty(Mono.error(new BusinessException(
                                 UserError.BOOTCAMP_NOT_FOUND.getMessage() + ": " + bootcampId)))
                     )
                     .then(
                         userBootcampRepository.findByUserId(userId)
-                            .map(userBootcamp -> userBootcamp.getBootcampId())
+                            .map(UserBootcamp::getBootcampId)
                             .collectList()
                             .flatMap(registeredBootcampIds -> {
                                 boolean hasConflict = bootcampIds.stream()
                                     .anyMatch(registeredBootcampIds::contains);
                                 if (hasConflict) {
-                                    return Mono.<Void>error(new IllegalArgumentException(UserError.USER_ALREADY_HAS_BOOTCAMPS.getMessage()));
+                                    return Mono.<Void>error(new BusinessException(UserError.USER_ALREADY_HAS_BOOTCAMPS.getMessage()));
                                 }
                                 return Flux.fromIterable(bootcampIds)
                                     .map(bootcampId -> UserBootcamp.builder()
