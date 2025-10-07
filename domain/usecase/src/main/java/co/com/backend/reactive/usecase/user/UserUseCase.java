@@ -3,6 +3,8 @@ package co.com.backend.reactive.usecase.user;
 import java.util.List;
 
 import co.com.backend.reactive.model.bootcampdata.gateways.BootcampDataRepository;
+import co.com.backend.reactive.model.datatosend.DataToSend;
+import co.com.backend.reactive.model.datatosend.gateways.DataToSendRepository;
 import co.com.backend.reactive.model.user.User;
 import co.com.backend.reactive.model.user.gateways.UserRepository;
 import co.com.backend.reactive.model.userboocamp.UserBootcamp;
@@ -19,6 +21,7 @@ public class UserUseCase implements IUserUseCase {
     private final UserRepository userRepository;
     private final UserBootcampRepository userBootcampRepository;
     private final BootcampDataRepository bootcampDataRepository;
+    private final DataToSendRepository dataToSendRepository;
     
     @Override
     public Mono<User> save(User user) {
@@ -63,7 +66,17 @@ public class UserUseCase implements IUserUseCase {
                                     .flatMap(userBootcampRepository::registerUserBootcamp)
                                     .then();
                             })
-                    )
+                    ).then(
+                                Mono.defer(() -> {
+                                    DataToSend data = DataToSend.builder()
+                                            .userId(userId)
+                                            .email(user.getEmail())
+                                            .name(user.getName())
+                                            .bootcampIds(bootcampIds)
+                                            .build();
+                                    return dataToSendRepository.sendDataToSqs(data);
+                                })
+                        )
             );
     }
 }
