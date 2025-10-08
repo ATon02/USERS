@@ -16,7 +16,8 @@ public enum UserError {
     BOOTCAMP_LIST_TOO_LARGE("Cannot register more than 5 bootcamps at once"),
     USER_ALREADY_HAS_BOOTCAMPS("User already has some of these bootcamps registered"),
     BOOTCAMP_NOT_FOUND("Bootcamp not found"),
-    USER_ID_INVALID("User id is invalid format");
+    USER_ID_INVALID("User id is invalid format"),
+    CONFLICT_DATES("There are conflicting dates in the selected bootcamps");
     
    
     

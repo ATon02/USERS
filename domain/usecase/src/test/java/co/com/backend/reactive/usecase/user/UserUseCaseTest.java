@@ -16,6 +16,7 @@ import reactor.test.StepVerifier;
 
 import co.com.backend.reactive.model.bootcampdata.BootcampData;
 import co.com.backend.reactive.model.bootcampdata.gateways.BootcampDataRepository;
+import co.com.backend.reactive.model.datatosend.gateways.DataToSendRepository;
 import co.com.backend.reactive.model.user.User;
 import co.com.backend.reactive.model.user.gateways.UserRepository;
 import co.com.backend.reactive.model.userboocamp.UserBootcamp;
@@ -38,12 +39,15 @@ class UserUseCaseTest {
     
     @Mock
     private BootcampDataRepository bootcampDataRepository;
+
+    @Mock
+    private DataToSendRepository dataToSendRepository;
     
     private UserUseCase userUseCase;
     
     @BeforeEach
     void setUp() {
-        userUseCase = new UserUseCase(userRepository, userBootcampRepository, bootcampDataRepository);
+        userUseCase = new UserUseCase(userRepository, userBootcampRepository, bootcampDataRepository, dataToSendRepository);
     }
     
     @Test
